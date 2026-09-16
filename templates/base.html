@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Student Records{% endblock %}</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo-icon.png') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script>
+        // Applied before the page paints, so there is no light-mode flash
+        // when a user has Dark Mode saved from the Settings page.
+        (function () {
+            try {
+                var raw = localStorage.getItem("srms_settings");
+                var settings = raw ? JSON.parse(raw) : {};
+                document.documentElement.setAttribute("data-theme", settings.theme || "light");
+                document.documentElement.setAttribute("data-fontsize", settings.fontSize || "normal");
+                document.documentElement.setAttribute("data-density", settings.density || "comfortable");
+            } catch (e) {}
+        })();
+    </script>
+</head>
+<body>
+<div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+        <a class="brand" href="{{ url_for('index') }}">
+            <img src="{{ url_for('static', filename='logo-icon.png') }}" alt="Acadex logo" class="brand-logo">
+            <span class="brand-text">
+                <strong>Acadex</strong>
+                <small>Student Records Management</small>
+            </span>
+        </a>
+
+        <nav class="side-links">
+            {% if current_user %}
+                <a href="{{ url_for('dashboard') }}">Dashboard</a>
+                {% if current_user.role == "student" %}
+                    <a href="{{ url_for('classmates') }}">My Classmates</a>
+                {% endif %}
+                <a href="{{ url_for('profile') }}">Profile</a>
+                <a href="{{ url_for('change_password') }}">Change Password</a>
+                <a href="{{ url_for('settings') }}">Settings</a>
+                <a href="{{ url_for('contact') }}">Report a Problem</a>
+                <div class="side-divider"></div>
+                <a class="logout" href="{{ url_for('logout') }}">Logout</a>
+            {% else %}
+                <a href="{{ url_for('login') }}">Login</a>
+                <a href="{{ url_for('signup') }}">Register</a>
+                <a href="{{ url_for('contact') }}">Contact Support</a>
+            {% endif %}
+        </nav>
+    </aside>
+
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <div class="main-area">
+        <div class="topbar">
+            <button class="hamburger" id="sidebarToggle" aria-label="Open menu">&#9776;</button>
+            <span class="topbar-title">{% block topbar_title %}Student Records Management System{% endblock %}</span>
+        </div>
+
+        <main class="container">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert {{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            {% block content %}{% endblock %}
+        </main>
+
+        <footer>
+            <p>Student Records Management System</p>
+            <p>For technical issues or system concerns, please use Contact Support.</p>
+        </footer>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

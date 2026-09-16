@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Administration - Student Records{% endblock %}
+{% block topbar_title %}Administration{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <div>
+        <p class="eyebrow">ADMINISTRATION</p>
+        <h1>Registered Users</h1>
+        <p class="muted">{{ message }}</p>
+    </div>
+    <a class="btn secondary" href="{{ url_for('profile') }}">View Profile</a>
+</div>
+
+<section class="card">
+    <div class="card-heading">
+        <div><h2>User Information</h2><p>Registered account information is listed below.</p></div>
+    </div>
+
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr><th>Name</th><th>Email</th><th>Username</th><th>Role</th><th>Student ID</th><th>Course</th><th>Actions</th></tr>
+            </thead>
+            <tbody>
+            {% for account in users %}
+                <tr>
+                    <td><b>{{ account.name }}</b></td>
+                    <td>{{ account.email }}</td>
+                    <td>{{ account.username }}</td>
+                    <td><span class="role-badge {{ account.role }}">{{ account.role|capitalize }}</span></td>
+                    <td>{{ account.student_id or "—" }}</td>
+                    <td>{{ account.course or "—" }}</td>
+                    <td class="actions">
+                        {% if account.role != "admin" %}
+                            <a class="btn small secondary" href="{{ url_for('admin_change_role', user_id=account.id) }}">Change Role</a>
+                        {% endif %}
+                        {% if account.role == "student" %}
+                            <a class="btn small secondary" href="{{ url_for('admin_reset_password', user_id=account.id) }}">Reset Password</a>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

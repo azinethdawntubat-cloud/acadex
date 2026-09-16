@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Login - Student Records{% endblock %}
+{% block topbar_title %}Login{% endblock %}
+
+{% block content %}
+<div class="form-wrap single">
+    <div class="form-card">
+        <img src="{{ url_for('static', filename='logo-icon.png') }}" alt="Acadex logo" class="card-logo">
+        <p class="eyebrow">SCHOOL RECORDS SYSTEM</p>
+        <h1>Account Login</h1>
+        <p class="muted">Sign in using your registered school account.</p>
+
+        <form method="POST">
+            <label>Username</label>
+            <input type="text" name="username" required>
+
+            <label>Password</label>
+            <input type="password" name="password" required>
+
+            <button class="btn primary full" type="submit">Sign In</button>
+        </form>
+
+        <p class="form-footer">Don't have an account? <a href="{{ url_for('signup') }}">Register here</a></p>
+    </div>
+</div>
+{% endblock %}
