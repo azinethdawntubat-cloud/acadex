@@ -1,3 +1,4 @@
+import base64
 import re
 from difflib import SequenceMatcher
 
@@ -7,6 +8,7 @@ from functools import wraps
 
 app = Flask(__name__)
 app.secret_key = "student-records-project-secret"
+app.config["MAX_CONTENT_LENGTH"] = 3 * 1024 * 1024
 
 
 # ============================================================
@@ -823,6 +825,47 @@ def profile():
         return redirect(url_for("login"))
 
     return render_template("profile.html", user=user)
+
+
+ALLOWED_AVATAR_TYPES = {"image/png", "image/jpeg", "image/gif", "image/webp"}
+MAX_AVATAR_BYTES = 2 * 1024 * 1024
+
+
+@app.route("/profile/avatar", methods=["POST"])
+@login_required
+def update_avatar():
+    user = find_user_by_id(session["user_id"])
+
+    if user is None:
+        session.clear()
+        return redirect(url_for("login"))
+
+    if request.form.get("action") == "remove":
+        user["avatar"] = ""
+        flash("Profile picture removed.", "success")
+        return redirect(url_for("profile"))
+
+    file = request.files.get("avatar")
+
+    if file is None or file.filename == "":
+        flash("Please choose an image to upload.", "error")
+        return redirect(url_for("profile"))
+
+    if file.mimetype not in ALLOWED_AVATAR_TYPES:
+        flash("Profile picture must be a PNG, JPG, GIF, or WEBP image.", "error")
+        return redirect(url_for("profile"))
+
+    data = file.read()
+
+    if len(data) > MAX_AVATAR_BYTES:
+        flash("Profile picture must be 2 MB or smaller.", "error")
+        return redirect(url_for("profile"))
+
+    # Stored in memory like the rest of the app's data.
+    encoded = base64.b64encode(data).decode("ascii")
+    user["avatar"] = f"data:{file.mimetype};base64,{encoded}"
+    flash("Profile picture updated.", "success")
+    return redirect(url_for("profile"))
 
 
 # ============================================================
