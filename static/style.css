@@ -14,7 +14,7 @@
     --green: #217346;
     --red: #a33a3a;
     --orange: #8a5a13;
-    --sidebar-width: 232px;
+    --gold: #b8860b;
 }
 
 /* ---------- DARK MODE ---------- */
@@ -30,6 +30,7 @@
     --green: #57c37e;
     --red: #e18080;
     --orange: #e0ac5f;
+    --gold: #e0ac5f;
 }
 
 :root[data-fontsize="large"] {
@@ -57,133 +58,70 @@ a {
 }
 
 /* ============================================================
-   APP SHELL / SIDEBAR
+   TOP BAR NAVIGATION (sidebar removed)
    ============================================================ */
 
 .app-shell {
     display: flex;
+    flex-direction: column;
     min-height: 100vh;
 }
 
-.sidebar {
-    width: var(--sidebar-width);
-    flex-shrink: 0;
-    background: var(--navy);
-    display: flex;
-    flex-direction: column;
-    position: fixed;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    overflow-y: auto;
-    z-index: 40;
-    transition: transform 0.2s ease;
-}
-
-.sidebar .brand {
-    text-decoration: none;
-    color: white;
+.topbar {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 20px 20px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    gap: 18px;
+    background: var(--navy);
+    color: white;
+    padding: 0 22px;
+    min-height: 60px;
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    flex-wrap: wrap;
 }
 
-.brand-logo {
-    width: 38px;
-    height: 38px;
-    flex-shrink: 0;
-    display: block;
-}
-
-.brand-text {
-    display: flex;
-    flex-direction: column;
-    line-height: 1.3;
-    min-width: 0;
-}
-
-.brand-text strong {
-    font-size: 17px;
+.brand-top {
+    color: white;
+    text-decoration: none;
     font-weight: 700;
+    font-size: 15px;
+    white-space: nowrap;
+    margin-right: auto;
 }
 
-.brand-text small {
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.4px;
-    text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.65);
-}
-
-.side-links {
+.topnav {
     display: flex;
-    flex-direction: column;
-    padding: 14px 10px;
+    align-items: center;
     gap: 3px;
-    flex: 1;
+    flex-wrap: wrap;
 }
 
-.side-links a {
+.topnav a {
     text-decoration: none;
     color: #cbd3dd;
-    font-size: 13.5px;
+    font-size: 13px;
     font-weight: 600;
-    padding: 11px 14px;
+    padding: 9px 12px;
     border-radius: 6px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
 }
 
-.side-links a:hover {
+.topnav a:hover {
     background: rgba(255, 255, 255, 0.08);
     color: white;
 }
 
-.side-links a.active {
+.topnav a.active {
     background: var(--blue);
     color: white;
 }
 
-.side-links a.logout {
+.topnav a.logout {
     color: #ffb4b4;
-    margin-top: auto;
-}
-
-.side-links .side-divider {
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    margin: 10px 4px;
-}
-
-.sidebar-overlay {
-    display: none;
-}
-
-.main-area {
-    margin-left: var(--sidebar-width);
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-    min-width: 0;
-}
-
-.topbar {
-    display: none;
-    align-items: center;
-    gap: 14px;
-    background: var(--navy);
-    color: white;
-    padding: 0 18px;
-    min-height: 58px;
-    position: sticky;
-    top: 0;
-    z-index: 30;
 }
 
 .topbar .hamburger {
+    display: none;
     background: none;
     border: 0;
     color: white;
@@ -191,11 +129,6 @@ a {
     cursor: pointer;
     line-height: 1;
     padding: 4px 6px;
-}
-
-.topbar-title {
-    font-weight: 700;
-    font-size: 14px;
 }
 
 .container {
@@ -218,13 +151,6 @@ a {
     text-align: center;
 }
 
-.hero-logo {
-    width: 68px;
-    height: 68px;
-    margin: 0 auto 18px;
-    display: block;
-}
-
 .school-header h1 {
     color: var(--navy);
     font-size: clamp(36px, 5vw, 58px);
@@ -245,7 +171,6 @@ a {
     letter-spacing: 2px;
     font-weight: 800;
     margin: 0 0 12px;
-    border-radius: 5px;
 }
 
 .hero-text {
@@ -351,18 +276,10 @@ h2 {
     background: var(--white);
     border: 1px solid var(--border);
     padding: 34px;
-    border-radius: 6px;
 }
 
 .form-card.wide {
     max-width: 800px;
-}
-
-.card-logo {
-    width: 44px;
-    height: 44px;
-    display: block;
-    margin: 0 auto 16px;
 }
 
 form label {
@@ -492,6 +409,88 @@ input:focus, select:focus, textarea:focus {
     border-color: #5a4a20;
 }
 
+/* ============================================================
+   ANNOUNCEMENTS (visible to all logged-in users)
+   ============================================================ */
+
+.announcement-board {
+    background: #fff9e8;
+    border: 1px solid #ecd9a0;
+    border-left: 5px solid var(--gold);
+    padding: 18px 22px;
+    margin-bottom: 22px;
+}
+
+:root[data-theme="dark"] .announcement-board {
+    background: #33290f;
+    border-color: #5a4a20;
+}
+
+.announcement-board .eyebrow {
+    color: var(--gold);
+    margin-bottom: 10px;
+}
+
+.announcement {
+    padding: 10px 0;
+    border-top: 1px dashed #e3cf96;
+}
+
+:root[data-theme="dark"] .announcement {
+    border-top-color: #5a4a20;
+}
+
+.announcement:first-of-type {
+    border-top: 0;
+    padding-top: 0;
+}
+
+.announcement b {
+    color: var(--navy);
+    font-size: 14px;
+}
+
+:root[data-theme="dark"] .announcement b {
+    color: #f1f4f8;
+}
+
+.announcement p {
+    margin: 4px 0 0;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+/* ============================================================
+   ADMIN: SUBMITTED PROBLEM REPORTS
+   ============================================================ */
+
+.report-item {
+    border: 1px solid var(--border);
+    padding: 15px 18px;
+    margin-bottom: 12px;
+}
+
+.report-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.report-head .muted {
+    font-size: 12px;
+}
+
+.report-body {
+    margin: 10px 0 0;
+    color: var(--text);
+    font-size: 13px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+}
+
 .dashboard-header {
     display: flex;
     align-items: center;
@@ -525,7 +524,6 @@ input:focus, select:focus, textarea:focus {
     background: var(--white);
     border: 1px solid var(--border);
     padding: 24px;
-    border-radius: 6px;
 }
 
 .card-heading {
@@ -535,7 +533,6 @@ input:focus, select:focus, textarea:focus {
     gap: 15px;
     margin-bottom: 20px;
     flex-wrap: wrap;
-    border-radius: 6px;
 }
 
 .card-heading p {
@@ -603,6 +600,16 @@ th {
     background: #143324;
 }
 
+.grade-meta {
+    margin: 0 0 10px;
+    font-size: 12px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
 .role-badge {
     display: inline-block;
     padding: 5px 9px;
@@ -655,6 +662,7 @@ th {
     display: flex;
     gap: 7px;
     align-items: center;
+    flex-wrap: wrap;
 }
 
 .actions form {
@@ -681,11 +689,6 @@ th {
     border: 1px solid var(--border);
     padding: 28px;
     margin-bottom: 18px;
-    border-radius: 6px;
-}
-
-.profile-card {
-    border-radius: 6px;
 }
 
 .profile-header h1 {
@@ -714,7 +717,6 @@ th {
     margin-top: 20px;
     border-top: 1px solid var(--border);
     border-left: 1px solid var(--border);
-    border-radius: 6px;
 }
 
 .profile-grid > div {
@@ -909,32 +911,6 @@ footer p {
    RESPONSIVE
    ============================================================ */
 
-@media (max-width: 900px) {
-    .sidebar {
-        transform: translateX(-100%);
-    }
-
-    .sidebar.open {
-        transform: translateX(0);
-    }
-
-    .sidebar-overlay.open {
-        display: block;
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.4);
-        z-index: 39;
-    }
-
-    .main-area {
-        margin-left: 0;
-    }
-
-    .topbar {
-        display: flex;
-    }
-}
-
 @media (max-width: 800px) {
     .form-wrap, .grade-layout {
         grid-template-columns: 1fr;
@@ -972,5 +948,21 @@ footer p {
 
     .settings-row {
         align-items: flex-start;
+    }
+
+    .topnav {
+        display: none;
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+        padding-bottom: 12px;
+    }
+
+    .topnav.open {
+        display: flex;
+    }
+
+    .topbar .hamburger {
+        display: block;
     }
 }

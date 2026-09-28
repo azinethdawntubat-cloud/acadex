@@ -9,13 +9,37 @@
         <h1>{{ student.name }}</h1>
         <p class="muted">{{ student.student_id }} &middot; {{ student.course }} &middot; {{ student.year_level }} &middot; {{ student.email }}</p>
     </div>
-    <a class="btn secondary" href="{{ url_for('dashboard') }}">Back to Students</a>
+    <a class="btn secondary" href="{{ url_for('teacher_students') }}">Back to My Students</a>
 </div>
 
 <div class="form-wrap grade-layout">
     <section class="card">
         <div class="card-heading"><div><h2>Add Grade</h2><p>Add a subject and grade to this student's record.</p></div></div>
         <form method="POST">
+            <label>Academic Period</label>
+            <select name="semester" required>
+                <option value="" disabled selected>Select academic period</option>
+                {% for period in ACADEMIC_PERIODS %}
+                    <option value="{{ period }}">{{ period }}</option>
+                {% endfor %}
+            </select>
+
+            <label>Year Level</label>
+            <select name="year_level" required>
+                <option value="" disabled selected>Select year level</option>
+                {% for level in YEAR_LEVELS %}
+                    <option value="{{ level }}" {% if student.year_level == level %}selected{% endif %}>{{ level }}</option>
+                {% endfor %}
+            </select>
+
+            <label>Program</label>
+            <select name="program" required>
+                <option value="" disabled selected>Select program</option>
+                {% for course, program in PROGRAMS.items() %}
+                    <option value="{{ program }}" {% if student_program == program %}selected{% endif %}>{{ program }}</option>
+                {% endfor %}
+            </select>
+
             <label>Subject</label>
             <input type="text" name="subject" required>
 
@@ -32,6 +56,10 @@
         {% if student_grades %}
             {% for grade in student_grades %}
             <div class="grade-edit-row">
+                <p class="grade-meta">
+                    <span class="course-tag">{{ grade.semester }}</span>
+                    {{ grade.year_level }} &middot; {{ grade.program }}
+                </p>
                 <form method="POST" action="{{ url_for('update_grade', student_id=student.id, grade_index=loop.index0) }}">
                     <div>
                         <label>Subject</label>

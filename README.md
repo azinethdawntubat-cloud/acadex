@@ -21,10 +21,9 @@ browser's `localStorage`, since there is no database to store them in.
 
 ## Student
 
-- Register (choosing Year Level, Course, and a 6-digit Student ID) — public
-  sign-up always creates a Student account
-- Login
-- View only personal grades
+- Register as Student (choosing Year Level, Course, and a 6-digit Student ID)
+- Login (with username OR email address)
+- View only personal grades on the **Academic Records** page (top bar)
 - View classmates who share the same course and year level
 - View personal profile
 - Change password (new password must be clearly different from the current one)
@@ -33,15 +32,15 @@ browser's `localStorage`, since there is no database to store them in.
 
 ## Teacher
 
-- There is no public Teacher sign-up. An admin promotes an existing
-  Student account to Teacher (see Admin section below).
-- Login
-- List the students they handle (filtered by their course by default)
+- Register as Teacher (choosing the Course they handle)
+- Login (with username OR email address)
+- **Select Students** from any course, then manage them on the **Students** page (top bar) (filtered by their course by default)
 - Search students by Course, Year Level, or Student ID
-- Add grades / subjects
+- Add grades / subjects with Academic Period, Year Level, and Program (e.g. 1st Semester (2026-2027), 2nd Year, Bachelor of Science in Computer Science)
 - Update grades
 - Delete grades
 - Remove students
+- Post class schedules (subject, day, time, room) for selected students — students see these on their Schedule page
 - View personal profile
 - Change password
 - Report a system problem
@@ -50,8 +49,7 @@ browser's `localStorage`, since there is no database to store them in.
 ## Admin
 
 - Default administrative account
-- View registered users and their information
-- Change any non-admin user's role between Student and Teacher
+- View registered users, separated into Students and Teachers tables
 - Reset a student's password if they forgot their current one (no current
   password required)
 - View personal profile
@@ -61,13 +59,11 @@ browser's `localStorage`, since there is no database to store them in.
 
 ## Registration
 
-Public registration always creates a Student account, and asks for a
-Student ID (exactly 6 digits), Year Level, and Course. There is no role
-choice on the sign-up form.
+The registration form allows users to select:
+- Student — includes Student ID (exactly 6 digits), Year Level, and Course
+- Teacher — includes the Course they handle
 
-Teacher accounts are not self-registered — an admin promotes a Student
-account to Teacher from the Registered Users page. Admin registration is
-also intentionally disabled; the admin account is provided by the system.
+Admin registration is intentionally disabled. The admin account is provided by the system.
 
 ## Default administrative account
 
@@ -106,3 +102,16 @@ Open:
 - Flask
 - HTML/CSS
 - Role-based access control
+
+
+## Recent changes
+
+- Left sidebar removed; navigation moved to a top bar.
+- Login accepts username OR email address.
+- Student dashboard: Academic Records and Schedule moved to their own
+  top-bar pages.
+- Grades now record Academic Period, Year Level, and Program.
+- Teachers select students (any course) via Select Students and manage
+  them from the Students top-bar page (grades, schedules, remove).
+- Admin dashboard separates Students and Teachers into two tables.
+- Admin can view submitted problem reports and post announcements.

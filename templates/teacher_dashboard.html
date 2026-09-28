@@ -9,12 +9,12 @@
         <h1>Welcome, {{ user.name }}</h1>
         <p class="muted">{{ message }} &middot; Course handled: <b>{{ user.course or "—" }}</b></p>
     </div>
-    <a class="btn secondary" href="{{ url_for('profile') }}">View Profile</a>
+    <a class="btn secondary" href="{{ url_for('teacher_students') }}">My Students</a>
 </div>
 
 <section class="card">
     <div class="card-heading">
-        <div><h2>Student Records</h2><p>Manage academic records for registered students.</p></div>
+        <div><h2>Student Records</h2><p>Search students, then use Select to add them to your students list.</p></div>
     </div>
 
     <form method="GET" class="search-bar">
@@ -69,8 +69,11 @@
                     <td>{{ student.year_level or "—" }}</td>
                     <td>{{ student.email }}</td>
                     <td class="actions">
-                        <a class="btn small primary" href="{{ url_for('manage_grades', student_id=student.id) }}">Manage Grades</a>
-                        <form method="POST" action="{{ url_for('delete_student', student_id=student.id) }}" onsubmit="return confirm('Delete this student and all of their grades?');">
+                        <form method="POST" action="{{ url_for('select_student', student_id=student.id) }}">
+                            <button class="btn small primary" type="submit">Select Student</button>
+                        </form>
+                        <a class="btn small secondary" href="{{ url_for('manage_grades', student_id=student.id) }}">Manage Grades</a>
+                        <form method="POST" action="{{ url_for('delete_student', student_id=student.id) }}" onsubmit="return confirm('Delete this student account and all of their records?');">
                             <button class="btn small danger" type="submit">Remove Student</button>
                         </form>
                     </td>

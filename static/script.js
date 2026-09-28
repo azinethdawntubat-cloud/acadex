@@ -114,27 +114,18 @@ function setupPasswordToggles() {
 }
 
 // ============================================================
-// SIDEBAR TOGGLE (mobile)
+// TOP BAR MENU TOGGLE (mobile)
 // ============================================================
 
-function initSidebarToggle() {
-    const toggleBtn = document.getElementById("sidebarToggle");
-    const sidebar = document.getElementById("sidebar");
-    const overlay = document.getElementById("sidebarOverlay");
+function initNavToggle() {
+    const toggleBtn = document.getElementById("navToggle");
+    const nav = document.getElementById("topnav");
 
-    if (!toggleBtn || !sidebar || !overlay) return;
-
-    function closeSidebar() {
-        sidebar.classList.remove("open");
-        overlay.classList.remove("open");
-    }
+    if (!toggleBtn || !nav) return;
 
     toggleBtn.addEventListener("click", () => {
-        sidebar.classList.toggle("open");
-        overlay.classList.toggle("open");
+        nav.classList.toggle("open");
     });
-
-    overlay.addEventListener("click", closeSidebar);
 }
 
 // ============================================================
@@ -171,37 +162,33 @@ function toggleRoleFields() {
 }
 
 function initSignupForm() {
-    // Only pages that still offer a role choice (e.g. the admin's
-    // Change Role page) need the show/hide behavior below. Public
-    // sign-up no longer includes a role choice — every new account
-    // is a Student, and only an admin can promote one to Teacher.
     const roleInputs = document.querySelectorAll('input[name="role"]');
     if (roleInputs.length === 0) return;
 
     roleInputs.forEach((el) => el.addEventListener("change", toggleRoleFields));
     toggleRoleFields();
-}
 
-function initStudentIdInput() {
     // Student ID: digits only, capped at 6 characters.
-    // Used on both the sign-up page and the admin's Change Role page.
     const studentIdInput = document.getElementById("studentIdInput");
-    if (!studentIdInput) return;
-
-    studentIdInput.addEventListener("input", () => {
-        studentIdInput.value = studentIdInput.value.replace(/\D/g, "").slice(0, 6);
-    });
+    if (studentIdInput) {
+        studentIdInput.addEventListener("input", () => {
+            studentIdInput.value = studentIdInput.value.replace(/\D/g, "").slice(0, 6);
+        });
+    }
 }
 
 // ============================================================
-// TEACHER DASHBOARD: student-ID search field, digits only
+// TEACHER DASHBOARD / ADMIN: student-ID fields, digits only
 // ============================================================
 
-function initTeacherSearch() {
-    const searchInput = document.getElementById("studentIdSearchInput");
-    if (!searchInput) return;
-    searchInput.addEventListener("input", () => {
-        searchInput.value = searchInput.value.replace(/\D/g, "").slice(0, 6);
+function initDigitsOnlyFields() {
+    const ids = ["studentIdSearchInput", "newStudentIdInput"];
+    ids.forEach((id) => {
+        const input = document.getElementById(id);
+        if (!input) return;
+        input.addEventListener("input", () => {
+            input.value = input.value.replace(/\D/g, "").slice(0, 6);
+        });
     });
 }
 
@@ -211,9 +198,8 @@ function initTeacherSearch() {
 
 document.addEventListener("DOMContentLoaded", () => {
     setupPasswordToggles();
-    initSidebarToggle();
+    initNavToggle();
     initSignupForm();
-    initStudentIdInput();
     initSettingsPage();
-    initTeacherSearch();
+    initDigitsOnlyFields();
 });
