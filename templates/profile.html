@@ -5,7 +5,20 @@
 {% block content %}
 <div class="profile-page">
     <div class="profile-header">
-        <div class="profile-avatar">{{ user.name[0]|upper }}</div>
+        <form class="avatar-form" method="POST" action="{{ url_for('update_avatar') }}" enctype="multipart/form-data">
+            <label class="avatar-upload" title="Change profile picture">
+                {% if user.avatar %}
+                <img class="profile-avatar avatar-img" src="{{ user.avatar }}" alt="Profile picture of {{ user.name }}">
+                {% else %}
+                <div class="profile-avatar">{{ user.name[0]|upper }}</div>
+                {% endif %}
+                <span class="avatar-overlay">Change</span>
+                <input class="sr-only" type="file" name="avatar" accept="image/png,image/jpeg,image/gif,image/webp" onchange="this.form.submit()">
+            </label>
+            {% if user.avatar %}
+            <button class="avatar-remove" type="submit" name="action" value="remove" formnovalidate>Remove</button>
+            {% endif %}
+        </form>
         <div>
             <p class="eyebrow">USER PROFILE</p>
             <h1>{{ user.name }}</h1>
