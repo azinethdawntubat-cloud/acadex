@@ -48,13 +48,13 @@
 
 <section class="card" style="margin-bottom: 20px;">
     <div class="card-heading">
-        <div><h2>Teachers</h2><p>{{ teachers|length }} teacher account(s) registered.</p></div>
+        <div><h2>Teachers</h2><p>{{ teachers|length }} teacher account(s) registered. Assign the courses and year levels each teacher handles.</p></div>
     </div>
 
     <div class="table-wrap">
         <table>
             <thead>
-                <tr><th>Name</th><th>Email</th><th>Username</th><th>Course Handled</th><th>Actions</th></tr>
+                <tr><th>Name</th><th>Email</th><th>Username</th><th>Assignments</th><th>Actions</th></tr>
             </thead>
             <tbody>
             {% for account in teachers %}
@@ -62,8 +62,17 @@
                     <td><b>{{ account.name }}</b></td>
                     <td>{{ account.email }}</td>
                     <td>{{ account.username }}</td>
-                    <td>{{ account.course or "—" }}</td>
+                    <td>
+                        {% if account.assignments %}
+                            {% for a in account.assignments %}
+                                <span class="course-tag">{{ a.course }} &middot; {{ a.year_level }}</span>
+                            {% endfor %}
+                        {% else %}
+                            <span class="muted">None assigned</span>
+                        {% endif %}
+                    </td>
                     <td class="actions">
+                        <a class="btn small primary" href="{{ url_for('admin_teacher_assignments', user_id=account.id) }}">Manage Assignments</a>
                         <a class="btn small secondary" href="{{ url_for('admin_reset_password', user_id=account.id) }}">Reset Password</a>
                         <a class="btn small secondary" href="{{ url_for('admin_change_role', user_id=account.id) }}">Change Role</a>
                         <form method="POST" action="{{ url_for('admin_delete_account', user_id=account.id) }}" onsubmit="return confirm('Delete this account permanently?');">
