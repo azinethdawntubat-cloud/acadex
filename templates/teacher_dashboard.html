@@ -7,22 +7,33 @@
     <div>
         <p class="eyebrow">TEACHER DASHBOARD</p>
         <h1>Welcome, {{ user.name }}</h1>
-        <p class="muted">{{ message }} &middot; Course handled: <b>{{ user.course or "—" }}</b></p>
+        <p class="muted">{{ message }}</p>
+        <p class="muted">
+            Assigned:
+            {% if assignments %}
+                {% for a in assignments %}
+                    <span class="course-tag">{{ a.course }} &middot; {{ a.year_level }}</span>
+                {% endfor %}
+            {% else %}
+                <b>None yet</b>
+            {% endif %}
+        </p>
     </div>
     <a class="btn secondary" href="{{ url_for('teacher_students') }}">My Students</a>
 </div>
 
 <section class="card">
     <div class="card-heading">
-        <div><h2>Student Records</h2><p>Search students, then use Select to add them to your students list.</p></div>
+        <div><h2>Student Records</h2><p>Students in your assigned courses and year levels.</p></div>
     </div>
 
+    {% if assignments %}
     <form method="GET" class="search-bar">
         <div class="field">
             <label>Course</label>
             <select name="course">
-                <option value="all" {% if selected_course == "all" %}selected{% endif %}>All Courses</option>
-                {% for course in COURSES %}
+                <option value="all" {% if selected_course == "all" %}selected{% endif %}>All Assigned Courses</option>
+                {% for course in assigned_course_options %}
                     <option value="{{ course }}" {% if selected_course == course %}selected{% endif %}>{{ course }}</option>
                 {% endfor %}
             </select>
@@ -31,8 +42,8 @@
         <div class="field">
             <label>Year Level</label>
             <select name="year_level">
-                <option value="all" {% if selected_year == "all" %}selected{% endif %}>All Year Levels</option>
-                {% for level in YEAR_LEVELS %}
+                <option value="all" {% if selected_year == "all" %}selected{% endif %}>All Assigned Year Levels</option>
+                {% for level in assigned_year_options %}
                     <option value="{{ level }}" {% if selected_year == level %}selected{% endif %}>{{ level }}</option>
                 {% endfor %}
             </select>
@@ -53,8 +64,11 @@
         <button class="btn primary small" type="submit">Search</button>
         <a class="btn secondary small" href="{{ url_for('dashboard') }}">Reset</a>
     </form>
+    {% endif %}
 
-    {% if students %}
+    {% if not assignments %}
+        <div class="empty">The administrator has not assigned you any courses or year levels yet. Once they do, your students will appear here.</div>
+    {% elif students %}
     <div class="table-wrap">
         <table>
             <thead>
@@ -69,13 +83,8 @@
                     <td>{{ student.year_level or "—" }}</td>
                     <td>{{ student.email }}</td>
                     <td class="actions">
-                        <form method="POST" action="{{ url_for('select_student', student_id=student.id) }}">
-                            <button class="btn small primary" type="submit">Select Student</button>
-                        </form>
-                        <a class="btn small secondary" href="{{ url_for('manage_grades', student_id=student.id) }}">Manage Grades</a>
-                        <form method="POST" action="{{ url_for('delete_student', student_id=student.id) }}" onsubmit="return confirm('Delete this student account and all of their records?');">
-                            <button class="btn small danger" type="submit">Remove Student</button>
-                        </form>
+                        <a class="btn small primary" href="{{ url_for('manage_grades', student_id=student.id) }}">Manage Grades</a>
+                        <a class="btn small secondary" href="{{ url_for('manage_schedule', student_id=student.id) }}">Schedule</a>
                     </td>
                 </tr>
             {% endfor %}
