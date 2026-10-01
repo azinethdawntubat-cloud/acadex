@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Teacher Assignments - Student Records{% endblock %}
+{% block topbar_title %}Teacher Assignments{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <div>
+        <p class="eyebrow">ADMINISTRATION</p>
+        <h1>{{ target.name }}</h1>
+        <p class="muted">{{ target.email }} &middot; {{ target.username }}</p>
+    </div>
+    <a class="btn secondary" href="{{ url_for('dashboard') }}">Back to Dashboard</a>
+</div>
+
+<div class="form-wrap grade-layout">
+    <section class="card">
+        <div class="card-heading"><div><h2>Add Assignment</h2><p>This teacher will be able to view and edit grades only for students in the courses and year levels assigned here.</p></div></div>
+        <form method="POST">
+            <label>Course / Department</label>
+            <select name="course" required>
+                <option value="" disabled selected>Select course</option>
+                {% for course in COURSES %}
+                    <option value="{{ course }}">{{ course }} &mdash; {{ PROGRAMS[course] }}</option>
+                {% endfor %}
+            </select>
+
+            <label>Year Level</label>
+            <select name="year_level" required>
+                <option value="" disabled selected>Select year level</option>
+                {% for level in YEAR_LEVELS %}
+                    <option value="{{ level }}">{{ level }}</option>
+                {% endfor %}
+            </select>
+
+            <button class="btn primary full" type="submit">Add Assignment</button>
+        </form>
+    </section>
+
+    <section class="card">
+        <div class="card-heading"><div><h2>Current Assignments</h2><p>{{ assignments|length }} assignment(s).</p></div></div>
+
+        {% if assignments %}
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>Course</th><th>Year Level</th><th>Action</th></tr></thead>
+                <tbody>
+                {% for a in assignments %}
+                    <tr>
+                        <td><span class="course-tag">{{ a.course }}</span></td>
+                        <td>{{ a.year_level }}</td>
+                        <td class="actions">
+                            <form method="POST" action="{{ url_for('admin_delete_teacher_assignment', user_id=target.id, assignment_index=loop.index0) }}" onsubmit="return confirm('Remove this assignment?');">
+                                <button class="btn small danger" type="submit">Remove</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+            <div class="empty">No assignments yet. This teacher cannot see or edit any students.</div>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}
