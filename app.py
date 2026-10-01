@@ -64,7 +64,7 @@ users = [
 #             year_level, program
 grades = []
 
-# Class schedules added by teachers for their selected students.
+# Class schedules added by teachers for students in their assignments.
 # Each schedule: student_id, subject, day, time, room
 schedules = []
 
@@ -106,7 +106,7 @@ class Teacher(User):
     """Teacher inherits from User."""
 
     def dashboard_message(self):
-        return "View students and manage their grades."
+        return "View and manage the students in your assigned courses and year levels."
 
 
 class Admin(User):
@@ -181,24 +181,93 @@ def get_user_schedule(user_id):
     return [s for s in schedules if s["student_id"] == user_id]
 
 
-def get_teacher_students(teacher_id):
-    """Students the teacher has selected to handle (any course)."""
-    return [
-        s for s in get_students()
-        if teacher_id in s.get("teacher_ids", [])
-    ]
-
-
-def get_available_students(teacher_id):
-    """Students the teacher has NOT selected yet."""
-    return [
-        s for s in get_students()
-        if teacher_id not in s.get("teacher_ids", [])
-    ]
-
-
 def program_of(course):
     return PROGRAMS.get(course, "")
+
+
+def course_of_program(program):
+    """Reverse lookup: full program name -> course code."""
+    for course, name in PROGRAMS.items():
+        if name == program:
+            return course
+    return ""
+
+
+# ------------------------------------------------------------
+# Teacher assignments (set by the admin)
+# Each assignment: {"course": "BSCS", "year_level": "2nd Year"}
+# A teacher may have as many as the admin gives them.
+# ------------------------------------------------------------
+
+def get_teacher_assignments(teacher):
+    return teacher.get("assignments", [])
+
+
+def teacher_has_assignment(teacher, course, year_level):
+    for a in get_teacher_assignments(teacher):
+        if a["course"] == course and a["year_level"] == year_level:
+            return True
+    return False
+
+
+def teacher_can_access_student(teacher, student):
+    """A teacher may only touch students whose course AND year level
+    match one of the teacher's assignments."""
+    return teacher_has_assignment(
+        teacher, student.get("course"), student.get("year_level")
+    )
+
+
+def grade_in_teacher_scope(teacher, grade):
+    """A teacher may only edit grades recorded under a course + year level
+    they are assigned to."""
+    return teacher_has_assignment(
+        teacher,
+        course_of_program(grade.get("program", "")),
+        grade.get("year_level", "")
+    )
+
+
+def get_teacher_students(teacher):
+    return [
+        s for s in get_students()
+        if teacher_can_access_student(teacher, s)
+    ]
+
+
+def assigned_courses(teacher):
+    """Assigned courses, in the standard course order, without duplicates."""
+    have = {a["course"] for a in get_teacher_assignments(teacher)}
+    return [c for c in COURSES if c in have]
+
+
+def assigned_years(teacher):
+    """Assigned year levels, in the standard order, without duplicates."""
+    have = {a["year_level"] for a in get_teacher_assignments(teacher)}
+    return [y for y in YEAR_LEVELS if y in have]
+
+
+def load_scoped_student(student_id):
+    """
+    Loads the logged-in teacher and the requested student.
+    Returns (teacher, student). student is None (with a flashed message)
+    when the student does not exist or is outside the teacher's assignments.
+    """
+    teacher = find_user_by_id(session["user_id"])
+    student = find_user_by_id(student_id)
+
+    if not student or student["role"] != "student":
+        flash("Student not found.", "danger")
+        return teacher, None
+
+    if not teacher_can_access_student(teacher, student):
+        flash(
+            "You are not assigned to this student's course and year level.",
+            "danger"
+        )
+        return teacher, None
+
+    return teacher, student
 
 
 def student_id_taken(student_id, exclude_user_id=None):
@@ -235,14 +304,14 @@ def passwords_too_similar(current_password, new_password):
 
 def filter_students_for_teacher(teacher, args):
     """
-    Applies the teacher's search/filter controls on top of the full
-    student list. Defaults to the teacher's own handled course.
+    Applies the teacher's search/filter controls on top of the students
+    inside the teacher's assignments.
     """
-    selected_course = args.get("course", teacher.get("course", "") or "all")
+    selected_course = args.get("course", "all")
     selected_year = args.get("year_level", "all")
     student_id_search = args.get("student_id_search", "").strip()
 
-    result = get_students()
+    result = get_teacher_students(teacher)
 
     if selected_course and selected_course != "all":
         result = [s for s in result if s.get("course") == selected_course]
@@ -379,12 +448,11 @@ def signup():
                     raise ValueError("Student ID is already registered.")
 
             else:
-                # Teachers register the course they handle, not a student ID.
-                if course not in COURSES:
-                    raise ValueError("Please select the course you handle.")
-
+                # Teachers do not choose a course. The administrator
+                # assigns their courses and year levels after sign-up.
                 student_id = ""
                 year_level = ""
+                course = ""
 
             new_user = {
                 "id": next_user_id,
@@ -395,10 +463,12 @@ def signup():
                 "role": role,
                 "student_id": student_id,
                 "year_level": year_level,
-                "course": course,
-                # Teachers who selected this student (their IDs).
-                "teacher_ids": []
+                "course": course
             }
+
+            if role == "teacher":
+                # Course + year level pairs assigned by the admin.
+                new_user["assignments"] = []
 
             users.append(new_user)
             next_user_id += 1
@@ -479,7 +549,10 @@ def dashboard():
             students=students,
             selected_course=selected_course,
             selected_year=selected_year,
-            student_id_search=student_id_search
+            student_id_search=student_id_search,
+            assignments=get_teacher_assignments(user),
+            assigned_course_options=assigned_courses(user),
+            assigned_year_options=assigned_years(user)
         )
 
     # Admin dashboard.
@@ -532,7 +605,7 @@ def student_schedule():
 
 
 # ============================================================
-# TEACHER: MY STUDENTS (selected students, any course)
+# TEACHER: MY STUDENTS (students inside the teacher's assignments)
 # ============================================================
 
 @app.route("/teacher/students")
@@ -543,43 +616,9 @@ def teacher_students():
     return render_template(
         "teacher_students.html",
         user=teacher,
-        my_students=get_teacher_students(teacher["id"]),
-        available_students=get_available_students(teacher["id"])
+        my_students=get_teacher_students(teacher),
+        assignments=get_teacher_assignments(teacher)
     )
-
-
-@app.route("/teacher/student/select/<int:student_id>", methods=["POST"])
-@role_required("teacher")
-def select_student(student_id):
-    teacher = find_user_by_id(session["user_id"])
-    student = find_user_by_id(student_id)
-
-    if not student or student["role"] != "student":
-        flash("Student not found.", "danger")
-        return redirect(url_for("teacher_students"))
-
-    teacher_ids = student.setdefault("teacher_ids", [])
-
-    if teacher["id"] in teacher_ids:
-        flash(f"{student['name']} is already in your students list.", "warning")
-    else:
-        teacher_ids.append(teacher["id"])
-        flash(f"{student['name']} was added to your students list.", "success")
-
-    return redirect(url_for("teacher_students"))
-
-
-@app.route("/teacher/student/unselect/<int:student_id>", methods=["POST"])
-@role_required("teacher")
-def unselect_student(student_id):
-    teacher = find_user_by_id(session["user_id"])
-    student = find_user_by_id(student_id)
-
-    if student and teacher["id"] in student.get("teacher_ids", []):
-        student["teacher_ids"].remove(teacher["id"])
-        flash(f"{student['name']} was removed from your students list.", "success")
-
-    return redirect(url_for("teacher_students"))
 
 
 # ============================================================
@@ -589,10 +628,9 @@ def unselect_student(student_id):
 @app.route("/teacher/student/<int:student_id>/grades", methods=["GET", "POST"])
 @role_required("teacher")
 def manage_grades(student_id):
-    student = find_user_by_id(student_id)
+    teacher, student = load_scoped_student(student_id)
 
-    if not student or student["role"] != "student":
-        flash("Student not found.", "danger")
+    if student is None:
         return redirect(url_for("teacher_students"))
 
     if request.method == "POST":
@@ -620,6 +658,14 @@ def manage_grades(student_id):
             if program not in PROGRAMS.values():
                 raise ValueError("Please select a valid program.")
 
+            # The program + year level must be one the teacher is assigned to.
+            if not teacher_has_assignment(
+                teacher, course_of_program(program), year_level
+            ):
+                raise ValueError(
+                    "You are not assigned to teach that program and year level."
+                )
+
             grades.append({
                 "student_id": student_id,
                 "subject": subject,
@@ -638,11 +684,25 @@ def manage_grades(student_id):
         except Exception:
             flash("Invalid grade input.", "danger")
 
+    # Each row keeps its real index so update/delete hit the right grade,
+    # plus a flag for whether this teacher may edit it.
+    grade_rows = []
+    for index, g in enumerate(get_user_grades(student_id)):
+        row = dict(g)
+        row["index"] = index
+        row["editable"] = grade_in_teacher_scope(teacher, g)
+        grade_rows.append(row)
+
+    allowed_years = assigned_years(teacher)
+    allowed_programs = [(c, PROGRAMS[c]) for c in assigned_courses(teacher)]
+
     return render_template(
         "manage_grades.html",
         student=student,
-        student_grades=get_user_grades(student_id),
-        student_program=program_of(student.get("course", ""))
+        student_grades=grade_rows,
+        student_program=program_of(student.get("course", "")),
+        allowed_years=allowed_years,
+        allowed_programs=allowed_programs
     )
 
 
@@ -652,10 +712,22 @@ def manage_grades(student_id):
 )
 @role_required("teacher")
 def update_grade(student_id, grade_index):
+    teacher, student = load_scoped_student(student_id)
+
+    if student is None:
+        return redirect(url_for("teacher_students"))
+
     student_grades = get_user_grades(student_id)
 
     try:
         target = student_grades[grade_index]
+
+        if not grade_in_teacher_scope(teacher, target):
+            flash(
+                "You are not assigned to this grade's program and year level.",
+                "danger"
+            )
+            return redirect(url_for("manage_grades", student_id=student_id))
 
         subject = request.form.get("subject", "").strip()
         grade_value = request.form.get("grade", "").strip()
@@ -688,10 +760,23 @@ def update_grade(student_id, grade_index):
 )
 @role_required("teacher")
 def delete_grade(student_id, grade_index):
+    teacher, student = load_scoped_student(student_id)
+
+    if student is None:
+        return redirect(url_for("teacher_students"))
+
     student_grades = get_user_grades(student_id)
 
     try:
         target = student_grades[grade_index]
+
+        if not grade_in_teacher_scope(teacher, target):
+            flash(
+                "You are not assigned to this grade's program and year level.",
+                "danger"
+            )
+            return redirect(url_for("manage_grades", student_id=student_id))
+
         grades.remove(target)
 
         flash("Grade deleted.", "success")
@@ -702,32 +787,6 @@ def delete_grade(student_id, grade_index):
     return redirect(url_for("manage_grades", student_id=student_id))
 
 
-# Kept for compatibility with the existing teacher template.
-@app.route("/teacher/student/delete/<int:student_id>", methods=["POST"])
-@role_required("teacher")
-def delete_student(student_id):
-    student = find_user_by_id(student_id)
-
-    if not student or student["role"] != "student":
-        flash("Student not found.", "danger")
-        return redirect(url_for("dashboard"))
-
-    users.remove(student)
-
-    # Remove the student's grades and schedules too.
-    grades[:] = [
-        grade for grade in grades
-        if grade["student_id"] != student_id
-    ]
-    schedules[:] = [
-        item for item in schedules
-        if item["student_id"] != student_id
-    ]
-
-    flash("Student and their records were deleted.", "success")
-    return redirect(url_for("dashboard"))
-
-
 # ============================================================
 # TEACHER: SCHEDULES
 # ============================================================
@@ -735,10 +794,9 @@ def delete_student(student_id):
 @app.route("/teacher/student/<int:student_id>/schedule", methods=["GET", "POST"])
 @role_required("teacher")
 def manage_schedule(student_id):
-    student = find_user_by_id(student_id)
+    teacher, student = load_scoped_student(student_id)
 
-    if not student or student["role"] != "student":
-        flash("Student not found.", "danger")
+    if student is None:
         return redirect(url_for("teacher_students"))
 
     if request.method == "POST":
@@ -780,6 +838,11 @@ def manage_schedule(student_id):
 )
 @role_required("teacher")
 def delete_schedule(student_id, schedule_index):
+    teacher, student = load_scoped_student(student_id)
+
+    if student is None:
+        return redirect(url_for("teacher_students"))
+
     student_schedules = get_user_schedule(student_id)
 
     try:
@@ -1073,11 +1136,18 @@ def admin_change_role(user_id):
             flash("This account already has that role.", "warning")
 
         elif new_role == "teacher":
-            # Student -> Teacher: clear student-only fields, keep the course.
+            # Student -> Teacher: clear student-only fields.
+            # The admin assigns their courses and year levels afterwards.
             target["role"] = "teacher"
             target["student_id"] = ""
             target["year_level"] = ""
-            flash(f"{target['name']} is now a Teacher.", "success")
+            target["course"] = ""
+            target["assignments"] = []
+            flash(
+                f"{target['name']} is now a Teacher. "
+                "Assign their courses and year levels from the dashboard.",
+                "success"
+            )
             return redirect(url_for("dashboard"))
 
         else:
@@ -1103,10 +1173,84 @@ def admin_change_role(user_id):
                 target["student_id"] = new_student_id
                 target["year_level"] = year_level
                 target["course"] = course
+                target.pop("assignments", None)
                 flash(f"{target['name']} is now a Student.", "success")
                 return redirect(url_for("dashboard"))
 
     return render_template("admin_change_role.html", target=target)
+
+
+# ============================================================
+# ADMIN: TEACHER ASSIGNMENTS (course + year level)
+# ============================================================
+
+@app.route("/admin/teacher/<int:user_id>/assignments", methods=["GET", "POST"])
+@role_required("admin")
+def admin_teacher_assignments(user_id):
+    target = find_user_by_id(user_id)
+
+    if not target or target["role"] != "teacher":
+        flash("Assignments can only be managed for teacher accounts.", "danger")
+        return redirect(url_for("dashboard"))
+
+    assignments = target.setdefault("assignments", [])
+
+    if request.method == "POST":
+        course = request.form.get("course", "").strip()
+        year_level = request.form.get("year_level", "").strip()
+
+        if course not in COURSES:
+            flash("Please select a valid course.", "danger")
+
+        elif year_level not in YEAR_LEVELS:
+            flash("Please select a valid year level.", "danger")
+
+        elif teacher_has_assignment(target, course, year_level):
+            flash(
+                f"{target['name']} is already assigned to {course} - {year_level}.",
+                "warning"
+            )
+
+        else:
+            assignments.append({"course": course, "year_level": year_level})
+            flash(
+                f"{target['name']} was assigned to {course} - {year_level}.",
+                "success"
+            )
+            return redirect(
+                url_for("admin_teacher_assignments", user_id=user_id)
+            )
+
+    return render_template(
+        "admin_teacher_assignments.html",
+        target=target,
+        assignments=assignments
+    )
+
+
+@app.route(
+    "/admin/teacher/<int:user_id>/assignments/delete/<int:assignment_index>",
+    methods=["POST"]
+)
+@role_required("admin")
+def admin_delete_teacher_assignment(user_id, assignment_index):
+    target = find_user_by_id(user_id)
+
+    if not target or target["role"] != "teacher":
+        flash("Assignments can only be managed for teacher accounts.", "danger")
+        return redirect(url_for("dashboard"))
+
+    try:
+        removed = target.get("assignments", []).pop(assignment_index)
+        flash(
+            f"Removed {removed['course']} - {removed['year_level']} "
+            f"from {target['name']}.",
+            "success"
+        )
+    except IndexError:
+        flash("Assignment not found.", "danger")
+
+    return redirect(url_for("admin_teacher_assignments", user_id=user_id))
 
 
 # ============================================================
