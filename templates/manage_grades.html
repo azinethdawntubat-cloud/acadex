@@ -14,7 +14,7 @@
 
 <div class="form-wrap grade-layout">
     <section class="card">
-        <div class="card-heading"><div><h2>Add Grade</h2><p>Add a subject and grade to this student's record.</p></div></div>
+        <div class="card-heading"><div><h2>Add Grade</h2><p>Add a subject and grade. Only the programs and year levels you are assigned to are available.</p></div></div>
         <form method="POST">
             <label>Academic Period</label>
             <select name="semester" required>
@@ -26,16 +26,16 @@
 
             <label>Year Level</label>
             <select name="year_level" required>
-                <option value="" disabled selected>Select year level</option>
-                {% for level in YEAR_LEVELS %}
+                <option value="" disabled {% if student.year_level not in allowed_years %}selected{% endif %}>Select year level</option>
+                {% for level in allowed_years %}
                     <option value="{{ level }}" {% if student.year_level == level %}selected{% endif %}>{{ level }}</option>
                 {% endfor %}
             </select>
 
             <label>Program</label>
             <select name="program" required>
-                <option value="" disabled selected>Select program</option>
-                {% for course, program in PROGRAMS.items() %}
+                <option value="" disabled {% if student_program not in allowed_programs|map(attribute=1) %}selected{% endif %}>Select program</option>
+                {% for course, program in allowed_programs %}
                     <option value="{{ program }}" {% if student_program == program %}selected{% endif %}>{{ program }}</option>
                 {% endfor %}
             </select>
@@ -51,7 +51,7 @@
     </section>
 
     <section class="card">
-        <div class="card-heading"><div><h2>Current Grades</h2><p>Teachers can update or delete existing grades.</p></div></div>
+        <div class="card-heading"><div><h2>Current Grades</h2><p>You can update or delete grades recorded under your assigned programs and year levels.</p></div></div>
 
         {% if student_grades %}
             {% for grade in student_grades %}
@@ -60,7 +60,8 @@
                     <span class="course-tag">{{ grade.semester }}</span>
                     {{ grade.year_level }} &middot; {{ grade.program }}
                 </p>
-                <form method="POST" action="{{ url_for('update_grade', student_id=student.id, grade_index=loop.index0) }}">
+                {% if grade.editable %}
+                <form method="POST" action="{{ url_for('update_grade', student_id=student.id, grade_index=grade.index) }}">
                     <div>
                         <label>Subject</label>
                         <input type="text" name="subject" value="{{ grade.subject }}" required>
@@ -71,9 +72,13 @@
                     </div>
                     <button class="btn small primary" type="submit">Update</button>
                 </form>
-                <form method="POST" action="{{ url_for('delete_grade', student_id=student.id, grade_index=loop.index0) }}">
+                <form method="POST" action="{{ url_for('delete_grade', student_id=student.id, grade_index=grade.index) }}">
                     <button class="btn small danger" type="submit">Delete</button>
                 </form>
+                {% else %}
+                <p><b>{{ grade.subject }}</b> &middot; {{ grade.grade }}</p>
+                <p class="muted">Read only. This grade is outside your assigned program and year level.</p>
+                {% endif %}
             </div>
             {% endfor %}
         {% else %}
