@@ -83,14 +83,7 @@
             </div>
 
             <div id="teacherFields" style="display:none;">
-                <label>Course Handled</label>
-                <select name="course">
-                    <option value="" disabled selected>Select the course you handle</option>
-                    {% for course in COURSES %}
-                        <option value="{{ course }}">{{ course }}</option>
-                    {% endfor %}
-                </select>
-                <p class="field-hint">You will only see students registered under this course by default.</p>
+                <p class="field-hint">Your administrator will assign the courses and year levels you handle after you register.</p>
             </div>
 
             <button class="btn primary full" type="submit">Create Account</button>
