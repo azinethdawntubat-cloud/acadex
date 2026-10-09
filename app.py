@@ -68,7 +68,8 @@ users = [
 grades = []
 
 # Class schedules added by teachers for students in their assignments.
-# Each schedule: student_id, subject, day, time, room
+# Each schedule: student_id, subject, day, time, room,
+#                teacher_id, teacher (name of the teacher who posted it)
 schedules = []
 
 # First real student/teacher will receive ID 2.
@@ -182,6 +183,49 @@ def get_user_grades(user_id):
 
 def get_user_schedule(user_id):
     return [s for s in schedules if s["student_id"] == user_id]
+
+
+def time_sort_key(text):
+    """Sort '8:00 AM - 9:30 AM' style times chronologically (10:00 AM comes
+    after 8:00 AM). Unparseable text sorts last, alphabetically."""
+    match = re.search(r"(\d{1,2})(?::(\d{2}))?\s*([AaPp])\.?[Mm]?", text or "")
+    if not match:
+        return (1, 0, text or "")
+    hour = int(match.group(1)) % 12
+    minute = int(match.group(2) or 0)
+    if match.group(3).lower() == "p":
+        hour += 12
+    return (0, hour * 60 + minute, text or "")
+
+
+def schedule_sort_key(entry):
+    day = entry["day"]
+    return (DAYS.index(day) if day in DAYS else 7, time_sort_key(entry["time"]))
+
+
+def get_teacher_classes(teacher_id):
+    """
+    The teacher's own timetable. Entries are saved per student, so the same
+    class posted to many students is merged into ONE row here, listing
+    the students who have it.
+    """
+    classes = {}
+    for entry in schedules:
+        if entry.get("teacher_id") != teacher_id:
+            continue
+        key = (entry["day"], entry["time"], entry["subject"], entry["room"])
+        item = classes.setdefault(key, {
+            "day": entry["day"],
+            "time": entry["time"],
+            "subject": entry["subject"],
+            "room": entry["room"],
+            "students": []
+        })
+        student = find_user_by_id(entry["student_id"])
+        if student:
+            item["students"].append(student)
+
+    return sorted(classes.values(), key=schedule_sort_key)
 
 
 def program_of(course):
@@ -651,10 +695,7 @@ def academic_records():
 def student_schedule():
     user = find_user_by_id(session["user_id"])
 
-    my_schedule = sorted(
-        get_user_schedule(user["id"]),
-        key=lambda s: (DAYS.index(s["day"]) if s["day"] in DAYS else 7, s["time"])
-    )
+    my_schedule = sorted(get_user_schedule(user["id"]), key=schedule_sort_key)
 
     return render_template(
         "schedule.html",
@@ -677,6 +718,31 @@ def teacher_students():
         user=teacher,
         my_students=get_teacher_students(teacher),
         assignments=get_teacher_assignments(teacher)
+    )
+
+
+# ============================================================
+# TEACHER: MY SCHEDULE (the classes this teacher has posted)
+# ============================================================
+
+@app.route("/teacher/my-schedule")
+@role_required("teacher")
+def teacher_my_schedule():
+    teacher = find_user_by_id(session["user_id"])
+    classes = get_teacher_classes(teacher["id"])
+
+    # Group by day, in Monday..Sunday order, skipping empty days.
+    by_day = [
+        (day, [c for c in classes if c["day"] == day])
+        for day in DAYS
+    ]
+    by_day = [(day, items) for day, items in by_day if items]
+
+    return render_template(
+        "teacher_my_schedule.html",
+        user=teacher,
+        classes=classes,
+        by_day=by_day
     )
 
 
@@ -874,15 +940,14 @@ def manage_schedule(student_id):
                 "subject": subject,
                 "day": day,
                 "time": time,
-                "room": room
+                "room": room,
+                "teacher_id": teacher["id"],
+                "teacher": teacher["name"]
             })
             flash("Schedule entry added.", "success")
             return redirect(url_for("manage_schedule", student_id=student_id))
 
-    student_schedule = sorted(
-        get_user_schedule(student_id),
-        key=lambda s: (DAYS.index(s["day"]) if s["day"] in DAYS else 7, s["time"])
-    )
+    student_schedule = sorted(get_user_schedule(student_id), key=schedule_sort_key)
 
     return render_template(
         "teacher_schedule.html",

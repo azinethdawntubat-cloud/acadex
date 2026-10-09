@@ -41,6 +41,8 @@ browser's `localStorage`, since there is no database to store them in.
 - Delete grades
 - Remove students
 - Post class schedules (subject, day, time, room) for selected students — students see these on their Schedule page
+- **My Schedule** page (top bar): your weekly classes grouped by day, merged
+  across students, with the students in each class
 - View personal profile
 - Change password
 - Report a system problem
@@ -138,3 +140,5 @@ grades), so only the CSS/JS/icons and an offline screen are stored.
   Chrome menu → *Install app*.
 - **iPhone / iPad (Safari):** Share → **Add to Home Screen**
   (the **Install App** button shows these steps).
+- Teachers have a **My Schedule** page; student schedules now show the
+  teacher's name, and times sort chronologically (8:00 AM before 10:00 AM).

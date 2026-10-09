@@ -21,7 +21,7 @@
     <div class="table-wrap">
         <table>
             <thead>
-                <tr><th>Day</th><th>Time</th><th>Subject</th><th>Room</th></tr>
+                <tr><th>Day</th><th>Time</th><th>Subject</th><th>Room</th><th>Teacher</th></tr>
             </thead>
             <tbody>
             {% for item in my_schedule %}
@@ -30,6 +30,7 @@
                     <td>{{ item.time }}</td>
                     <td>{{ item.subject }}</td>
                     <td>{{ item.room }}</td>
+                    <td>{{ item.teacher or "—" }}</td>
                 </tr>
             {% endfor %}
             </tbody>

@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}My Schedule - Student Records{% endblock %}
+{% block topbar_title %}My Schedule{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <div>
+        <p class="eyebrow">TEACHER</p>
+        <h1>My Schedule</h1>
+        <p class="muted">Your weekly classes, built from the schedule entries you posted for students.</p>
+    </div>
+    <a class="btn secondary" href="{{ url_for('teacher_students') }}">Post a Class (My Students)</a>
+</div>
+
+{% if by_day %}
+    {% for day, items in by_day %}
+    <section class="card" style="margin-bottom: 20px;">
+        <div class="card-heading">
+            <div><h2>{{ day }}</h2><p>{{ items|length }} class(es).</p></div>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr><th>Time</th><th>Subject</th><th>Room</th><th>Students</th></tr>
+                </thead>
+                <tbody>
+                {% for c in items %}
+                    <tr>
+                        <td><b>{{ c.time }}</b></td>
+                        <td>{{ c.subject }}</td>
+                        <td>{{ c.room }}</td>
+                        <td>
+                            <b>{{ c.students|length }}</b>
+                            <span class="muted">
+                                {% for s in c.students[:3] %}{{ s.name }}{% if not loop.last %}, {% endif %}{% endfor %}{% if c.students|length > 3 %} +{{ c.students|length - 3 }} more{% endif %}
+                            </span>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+    {% endfor %}
+{% else %}
+    <section class="card">
+        <div class="empty">You have not posted any classes yet. Open <a href="{{ url_for('teacher_students') }}">My Students</a>, choose a student, and click <b>Schedule</b> to add one.</div>
+    </section>
+{% endif %}
+{% endblock %}

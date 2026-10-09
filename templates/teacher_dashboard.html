@@ -19,7 +19,10 @@
             {% endif %}
         </p>
     </div>
-    <a class="btn secondary" href="{{ url_for('teacher_students') }}">My Students</a>
+    <div class="header-actions">
+        <a class="btn primary" href="{{ url_for('teacher_my_schedule') }}">My Schedule</a>
+        <a class="btn secondary" href="{{ url_for('teacher_students') }}">My Students</a>
+    </div>
 </div>
 
 <section class="card">
