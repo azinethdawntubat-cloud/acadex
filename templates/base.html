@@ -4,6 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Student Records{% endblock %}</title>
+
+    <!-- Installable app (PWA) -->
+    <link rel="manifest" href="{{ url_for('web_manifest') }}">
+    <meta name="theme-color" content="#1f2937">
+    <meta name="application-name" content="Acadex">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Acadex">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <link rel="icon" type="image/png" sizes="192x192" href="{{ url_for('static', filename='icons/icon-192.png') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/apple-touch-icon.png') }}">
+
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <script>
         // Applied before the page paints, so there is no light-mode flash
@@ -46,6 +58,7 @@
                 <a href="{{ url_for('signup') }}">Register</a>
                 <a href="{{ url_for('contact') }}">Contact Support</a>
             {% endif %}
+            <button type="button" class="install-btn" id="installBtn" hidden>Install App</button>
         </nav>
     </header>
 

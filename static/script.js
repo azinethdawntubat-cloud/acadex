@@ -193,6 +193,63 @@ function initDigitsOnlyFields() {
 }
 
 // ============================================================
+// INSTALLABLE APP (PWA): service worker + "Install App" button
+// - Chrome / Edge / Android: uses the browser's install prompt.
+// - iPhone / iPad Safari: no prompt exists, so we show the steps.
+// ============================================================
+
+let deferredInstallPrompt = null;
+
+function isStandalone() {
+    return window.matchMedia("(display-mode: standalone)").matches ||
+        window.navigator.standalone === true;
+}
+
+function isIOS() {
+    return /iphone|ipad|ipod/i.test(navigator.userAgent) ||
+        (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+}
+
+function initPWA() {
+    if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(() => {});
+    }
+
+    const btn = document.getElementById("installBtn");
+    if (!btn || isStandalone()) return;
+
+    window.addEventListener("beforeinstallprompt", (event) => {
+        event.preventDefault();
+        deferredInstallPrompt = event;
+        btn.hidden = false;
+    });
+
+    window.addEventListener("appinstalled", () => {
+        deferredInstallPrompt = null;
+        btn.hidden = true;
+    });
+
+    // iOS Safari never fires beforeinstallprompt, so always offer the hint.
+    if (isIOS()) btn.hidden = false;
+
+    btn.addEventListener("click", async () => {
+        if (deferredInstallPrompt) {
+            deferredInstallPrompt.prompt();
+            await deferredInstallPrompt.userChoice;
+            deferredInstallPrompt = null;
+            btn.hidden = true;
+        } else if (isIOS()) {
+            alert(
+                "To install Acadex on your iPhone/iPad:\n\n" +
+                "1. Tap the Share button in Safari (square with an arrow).\n" +
+                "2. Choose \"Add to Home Screen\".\n" +
+                "3. Tap Add."
+            );
+        }
+    });
+}
+
+// ============================================================
 // INIT
 // ============================================================
 
@@ -202,4 +259,5 @@ document.addEventListener("DOMContentLoaded", () => {
     initSignupForm();
     initSettingsPage();
     initDigitsOnlyFields();
+    initPWA();
 });

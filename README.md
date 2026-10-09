@@ -50,6 +50,8 @@ browser's `localStorage`, since there is no database to store them in.
 
 - Default administrative account
 - View registered users, separated into Students and Teachers tables
+- **Add Student / Teacher accounts** directly (Admin Dashboard → **+ Add User**).
+  New teachers are sent straight to the assignments page afterwards.
 - Reset a student's password if they forgot their current one (no current
   password required)
 - View personal profile
@@ -115,3 +117,24 @@ Open:
   them from the Students top-bar page (grades, schedules, remove).
 - Admin dashboard separates Students and Teachers into two tables.
 - Admin can view submitted problem reports and post announcements.
+- Admin can add Student and Teacher accounts from the dashboard
+  (`/admin/add-user`). Sign-up and Add User share the same validation, and
+  email addresses must now be unique (login accepts email).
+- **Installable app (PWA):** the site can be installed on PC and mobile.
+
+## Install as an app (PC + mobile)
+
+The app ships a web app manifest (`/manifest.webmanifest`), icons, and a small
+service worker (`/sw.js`). Page HTML is never cached (it contains private
+grades), so only the CSS/JS/icons and an offline screen are stored.
+
+> Browsers only allow installing from **HTTPS** (or `localhost`). Use the
+> deployed URL (e.g. your Render link). `http://192.168.x.x:5000` on a phone
+> will NOT offer installation.
+
+- **PC (Chrome / Edge):** open the site and click **Install App** in the top
+  bar, or the install icon in the address bar.
+- **Android (Chrome):** tap **Install App** in the menu (☰), or
+  Chrome menu → *Install app*.
+- **iPhone / iPad (Safari):** Share → **Add to Home Screen**
+  (the **Install App** button shows these steps).

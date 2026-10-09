@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}Add User - Student Records{% endblock %}
+{% block topbar_title %}Add User{% endblock %}
+
+{% block content %}
+<div class="form-wrap single">
+    <div class="form-card wide">
+        <p class="eyebrow">ADMINISTRATION</p>
+        <h1>Add User</h1>
+        <p class="muted">Create a Student or Teacher account. Share the username and password with the person so they can log in.</p>
+
+        <form method="POST" autocomplete="off">
+            <div class="two-col">
+                <div>
+                    <label>Full Name</label>
+                    <input type="text" name="name" value="{{ form.get('name', '') }}" required>
+                </div>
+                <div>
+                    <label>Email Address</label>
+                    <input type="email" name="email" value="{{ form.get('email', '') }}" required>
+                </div>
+            </div>
+
+            <div class="two-col">
+                <div>
+                    <label>Username</label>
+                    <input type="text" name="username" value="{{ form.get('username', '') }}" autocomplete="off" required>
+                </div>
+                <div>
+                    <label>Temporary Password</label>
+                    <input type="password" name="password" minlength="6" autocomplete="new-password" required>
+                    <p class="field-hint">At least 6 characters. The user can change it later.</p>
+                </div>
+            </div>
+
+            <label>Account Type</label>
+            <div class="role-select">
+                <label class="role-option">
+                    <input type="radio" name="role" value="student" {% if preselect != "teacher" %}checked{% endif %}>
+                    <span>Student</span>
+                    <small>Access personal academic records</small>
+                </label>
+
+                <label class="role-option">
+                    <input type="radio" name="role" value="teacher" {% if preselect == "teacher" %}checked{% endif %}>
+                    <span>Teacher</span>
+                    <small>Manage student academic records</small>
+                </label>
+            </div>
+
+            <div id="studentFields">
+                <div class="two-col">
+                    <div>
+                        <label>Student ID</label>
+                        <input
+                            type="text"
+                            id="studentIdInput"
+                            name="student_id"
+                            value="{{ form.get('student_id', '') }}"
+                            inputmode="numeric"
+                            pattern="\d{6}"
+                            maxlength="6"
+                            placeholder="e.g. 240123"
+                            title="Student ID must be exactly 6 digits">
+                        <p class="field-hint">Must be exactly 6 digits.</p>
+                    </div>
+                    <div>
+                        <label>Year Level</label>
+                        <select name="year_level">
+                            <option value="" disabled {% if not form.get('year_level') %}selected{% endif %}>Select year level</option>
+                            {% for level in YEAR_LEVELS %}
+                                <option value="{{ level }}" {% if form.get('year_level') == level %}selected{% endif %}>{{ level }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <label>Course</label>
+                <select name="course">
+                    <option value="" disabled {% if not form.get('course') %}selected{% endif %}>Select course</option>
+                    {% for course in COURSES %}
+                        <option value="{{ course }}" {% if form.get('course') == course %}selected{% endif %}>{{ course }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div id="teacherFields" style="display:none;">
+                <p class="field-hint">After the account is created you will be taken to the assignments page to choose the courses and year levels this teacher handles.</p>
+            </div>
+
+            <button class="btn primary full" type="submit">Create Account</button>
+        </form>
+
+        <p class="form-footer"><a href="{{ url_for('dashboard') }}">Back to Registered Users</a></p>
+    </div>
+</div>
+{% endblock %}

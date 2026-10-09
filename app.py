@@ -2,7 +2,10 @@ import base64
 import re
 from difflib import SequenceMatcher
 
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask import (
+    Flask, render_template, request, redirect, url_for, session, flash,
+    send_from_directory
+)
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 
@@ -325,6 +328,95 @@ def filter_students_for_teacher(teacher, args):
     return result, selected_course, selected_year, student_id_search
 
 
+def email_taken(email):
+    """Login accepts an email address, so emails must be unique too."""
+    email = email.strip().lower()
+    return any(u["email"].lower() == email for u in users)
+
+
+def create_account_from_form(form):
+    """
+    Validate the account form (shared by public Sign Up and the admin's
+    Add User page), then append the new account to `users`.
+
+    Returns the new user dict. Raises ValueError with a friendly message
+    when something is wrong, so callers just flash it.
+    """
+    global next_user_id
+
+    name = form.get("name", "").strip()
+    email = form.get("email", "").strip()
+    username = form.get("username", "").strip()
+    password = form.get("password", "")
+    role = form.get("role", "").strip().lower()
+    student_id = form.get("student_id", "").strip()
+    year_level = form.get("year_level", "").strip()
+    course = form.get("course", "").strip()
+
+    if not name or not email or not username or not password:
+        raise ValueError("Please fill in all required fields.")
+
+    if len(password) < 6:
+        raise ValueError("Password must be at least 6 characters.")
+
+    if role not in ("student", "teacher"):
+        raise ValueError("Please select Student or Teacher.")
+
+    if find_user_by_username(username):
+        raise ValueError("Username is already taken.")
+
+    if email_taken(email):
+        raise ValueError("Email address is already registered.")
+
+    if role == "student":
+        if not student_id:
+            raise ValueError("Student ID is required for students.")
+
+        if not STUDENT_ID_PATTERN.fullmatch(student_id):
+            raise ValueError("Student ID must be exactly 6 digits.")
+
+        if not year_level:
+            raise ValueError("Please select the year level.")
+
+        if year_level not in YEAR_LEVELS:
+            raise ValueError("Please select a valid year level.")
+
+        if course not in COURSES:
+            raise ValueError("Please select a valid course.")
+
+        # Prevent duplicate student IDs.
+        if student_id_taken(student_id):
+            raise ValueError("Student ID is already registered.")
+
+    else:
+        # Teachers do not choose a course. The administrator
+        # assigns their courses and year levels after the account exists.
+        student_id = ""
+        year_level = ""
+        course = ""
+
+    new_user = {
+        "id": next_user_id,
+        "name": name,
+        "email": email,
+        "username": username,
+        "password": generate_password_hash(password),
+        "role": role,
+        "student_id": student_id,
+        "year_level": year_level,
+        "course": course
+    }
+
+    if role == "teacher":
+        # Course + year level pairs assigned by the admin.
+        new_user["assignments"] = []
+
+    users.append(new_user)
+    next_user_id += 1
+
+    return new_user
+
+
 # ============================================================
 # LOGIN / ROLE PROTECTION
 # ============================================================
@@ -404,74 +496,9 @@ def index():
 
 @app.route("/signup", methods=["GET", "POST"])
 def signup():
-    global next_user_id
-
     if request.method == "POST":
         try:
-            name = request.form.get("name", "").strip()
-            email = request.form.get("email", "").strip()
-            username = request.form.get("username", "").strip()
-            password = request.form.get("password", "")
-            role = request.form.get("role", "").strip().lower()
-            student_id = request.form.get("student_id", "").strip()
-            year_level = request.form.get("year_level", "").strip()
-            course = request.form.get("course", "").strip()
-
-            if not name or not email or not username or not password:
-                raise ValueError("Please fill in all required fields.")
-
-            if len(password) < 6:
-                raise ValueError("Password must be at least 6 characters.")
-
-            # Public sign-up is only for students and teachers.
-            if role not in ("student", "teacher"):
-                raise ValueError("Please select Student or Teacher.")
-
-            if find_user_by_username(username):
-                raise ValueError("Username is already taken.")
-
-            if role == "student":
-                if not student_id:
-                    raise ValueError("Student ID is required for students.")
-
-                if not STUDENT_ID_PATTERN.fullmatch(student_id):
-                    raise ValueError("Student ID must be exactly 6 digits.")
-
-                if not year_level:
-                    raise ValueError("Please select your year level.")
-
-                if course not in COURSES:
-                    raise ValueError("Please select a valid course.")
-
-                # Prevent duplicate student IDs.
-                if student_id_taken(student_id):
-                    raise ValueError("Student ID is already registered.")
-
-            else:
-                # Teachers do not choose a course. The administrator
-                # assigns their courses and year levels after sign-up.
-                student_id = ""
-                year_level = ""
-                course = ""
-
-            new_user = {
-                "id": next_user_id,
-                "name": name,
-                "email": email,
-                "username": username,
-                "password": generate_password_hash(password),
-                "role": role,
-                "student_id": student_id,
-                "year_level": year_level,
-                "course": course
-            }
-
-            if role == "teacher":
-                # Course + year level pairs assigned by the admin.
-                new_user["assignments"] = []
-
-            users.append(new_user)
-            next_user_id += 1
+            create_account_from_form(request.form)
 
             flash("Account created successfully. You can now log in.", "success")
             return redirect(url_for("login"))
@@ -511,6 +538,38 @@ def logout():
     session.clear()
     flash("You have been logged out.", "success")
     return redirect(url_for("login"))
+
+
+# ============================================================
+# INSTALLABLE APP (PWA): manifest, service worker, offline page
+# Lets Acadex be installed on PC (Chrome/Edge) and phones
+# (Android Chrome, iPhone/iPad Safari "Add to Home Screen").
+# ============================================================
+
+@app.route("/manifest.webmanifest")
+def web_manifest():
+    response = send_from_directory(
+        app.static_folder, "manifest.webmanifest",
+        mimetype="application/manifest+json"
+    )
+    response.headers["Cache-Control"] = "no-cache"
+    return response
+
+
+@app.route("/sw.js")
+def service_worker():
+    # Served from the site root so the worker can control every page.
+    response = send_from_directory(
+        app.static_folder, "sw.js", mimetype="application/javascript"
+    )
+    response.headers["Cache-Control"] = "no-cache"
+    response.headers["Service-Worker-Allowed"] = "/"
+    return response
+
+
+@app.route("/offline")
+def offline():
+    return render_template("offline.html")
 
 
 # ============================================================
@@ -1015,6 +1074,50 @@ def change_password():
             return redirect(url_for("dashboard"))
 
     return render_template("change_password.html")
+
+
+# ============================================================
+# ADMIN: ADD A STUDENT OR TEACHER ACCOUNT
+# ============================================================
+
+@app.route("/admin/add-user", methods=["GET", "POST"])
+@role_required("admin")
+def admin_add_user():
+    # ?role=teacher / ?role=student pre-selects the account type.
+    preselect = request.args.get("role", "student")
+    if preselect not in ("student", "teacher"):
+        preselect = "student"
+
+    if request.method == "POST":
+        try:
+            new_user = create_account_from_form(request.form)
+
+            if new_user["role"] == "teacher":
+                flash(
+                    f"Teacher account for {new_user['name']} was created. "
+                    "Now assign the courses and year levels they handle.",
+                    "success"
+                )
+                return redirect(
+                    url_for("admin_teacher_assignments", user_id=new_user["id"])
+                )
+
+            flash(f"Student account for {new_user['name']} was created.", "success")
+            return redirect(url_for("dashboard"))
+
+        except ValueError as error:
+            flash(str(error), "danger")
+            # Keep what the admin typed (never the password).
+            preselect = request.form.get("role", preselect)
+
+        except Exception:
+            flash("Something went wrong while creating the account.", "danger")
+
+    return render_template(
+        "admin_add_user.html",
+        form=request.form if request.method == "POST" else {},
+        preselect=preselect
+    )
 
 
 # ============================================================

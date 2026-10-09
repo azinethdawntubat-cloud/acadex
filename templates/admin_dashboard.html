@@ -9,12 +9,16 @@
         <h1>Registered Users</h1>
         <p class="muted">{{ message }}</p>
     </div>
-    <a class="btn secondary" href="{{ url_for('profile') }}">View Profile</a>
+    <div class="header-actions">
+        <a class="btn primary" href="{{ url_for('admin_add_user') }}">+ Add User</a>
+        <a class="btn secondary" href="{{ url_for('profile') }}">View Profile</a>
+    </div>
 </div>
 
 <section class="card" style="margin-bottom: 20px;">
     <div class="card-heading">
         <div><h2>Students</h2><p>{{ students|length }} student account(s) registered.</p></div>
+        <a class="btn small primary" href="{{ url_for('admin_add_user', role='student') }}">+ Add Student</a>
     </div>
 
     <div class="table-wrap">
@@ -49,6 +53,7 @@
 <section class="card" style="margin-bottom: 20px;">
     <div class="card-heading">
         <div><h2>Teachers</h2><p>{{ teachers|length }} teacher account(s) registered. Assign the courses and year levels each teacher handles.</p></div>
+        <a class="btn small primary" href="{{ url_for('admin_add_user', role='teacher') }}">+ Add Teacher</a>
     </div>
 
     <div class="table-wrap">
