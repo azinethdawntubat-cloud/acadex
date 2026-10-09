@@ -282,6 +282,34 @@ def get_teacher_students(teacher):
     ]
 
 
+def get_student_teachers(student):
+    """
+    The teachers a student has: every teacher whose assignments include the
+    student's course AND year level. Each result also lists the subjects
+    that teacher has posted on the student's schedule.
+    """
+    result = []
+    for teacher in get_teachers():
+        if not teacher_can_access_student(teacher, student):
+            continue
+
+        subjects = []
+        for entry in schedules:
+            if (entry["student_id"] == student["id"]
+                    and entry.get("teacher_id") == teacher["id"]
+                    and entry["subject"] not in subjects):
+                subjects.append(entry["subject"])
+
+        result.append({
+            "id": teacher["id"],
+            "name": teacher["name"],
+            "email": teacher["email"],
+            "subjects": subjects
+        })
+
+    return sorted(result, key=lambda t: t["name"].lower())
+
+
 def assigned_courses(teacher):
     """Assigned courses, in the standard course order, without duplicates."""
     have = {a["course"] for a in get_teacher_assignments(teacher)}
@@ -996,6 +1024,18 @@ def classmates():
     ]
 
     return render_template("classmates.html", user=user, classmates=classmate_list)
+
+
+@app.route("/teachers")
+@role_required("student")
+def my_teachers():
+    user = find_user_by_id(session["user_id"])
+
+    return render_template(
+        "my_teachers.html",
+        user=user,
+        teachers=get_student_teachers(user)
+    )
 
 
 # ============================================================

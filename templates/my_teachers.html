@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}My Teachers - Student Records{% endblock %}
+{% block topbar_title %}My Teachers{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <div>
+        <p class="eyebrow">{{ user.course or "—" }} &middot; {{ user.year_level or "—" }}</p>
+        <h1>My Teachers</h1>
+        <p class="muted">Teachers assigned by the administrator to your course and year level.</p>
+    </div>
+    <a class="btn secondary" href="{{ url_for('dashboard') }}">Back to Dashboard</a>
+</div>
+
+<section class="card">
+    <div class="card-heading">
+        <div><h2>Teachers</h2><p>{{ teachers|length }} teacher(s) found.</p></div>
+    </div>
+
+    {% if teachers %}
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr><th>Name</th><th>Email</th><th>Your Subjects</th></tr>
+            </thead>
+            <tbody>
+            {% for t in teachers %}
+                <tr>
+                    <td><b>{{ t.name }}</b></td>
+                    <td>{{ t.email }}</td>
+                    <td>
+                        {% if t.subjects %}
+                            {% for subject in t.subjects %}<span class="course-tag">{{ subject }}</span> {% endfor %}
+                        {% else %}
+                            <span class="muted">No class posted yet</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+        <div class="empty">No teachers have been assigned to your course and year level yet.</div>
+    {% endif %}
+</section>
+{% endblock %}

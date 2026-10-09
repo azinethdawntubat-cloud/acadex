@@ -142,3 +142,5 @@ grades), so only the CSS/JS/icons and an offline screen are stored.
   (the **Install App** button shows these steps).
 - Teachers have a **My Schedule** page; student schedules now show the
   teacher's name, and times sort chronologically (8:00 AM before 10:00 AM).
+- Students have a **My Teachers** page: the teachers assigned to their course
+  and year level, plus the subjects each has posted on their schedule.

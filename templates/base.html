@@ -42,6 +42,7 @@
             {% if current_user %}
                 <a href="{{ url_for('dashboard') }}">Dashboard</a>
                 {% if current_user.role == "student" %}
+                    <a href="{{ url_for('my_teachers') }}">My Teachers</a>
                     <a href="{{ url_for('classmates') }}">My Classmates</a>
                     <a href="{{ url_for('academic_records') }}">Academic Records</a>
                     <a href="{{ url_for('student_schedule') }}">Schedule</a>
